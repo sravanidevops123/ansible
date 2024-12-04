@@ -1,0 +1,23 @@
+- name: Run Python script to validate portfolio configurations
+  ansible.builtin.shell: "python3 scripts/validate_portfolio_configs.py dev >> output.txt"
+  args:
+    chdir: "/path/to/your/scripts"
+
+- name: Read the output file
+  ansible.builtin.slurp:
+    src: "/path/to/your/scripts/output.txt"
+  register: output_file
+
+- name: Set duplicationFlag variable
+  set_fact:
+    duplicationFlag: "{{ output_file['content'] | b64decode | trim }}"
+
+- name: Fail if duplicationFlag contains 'True'
+  ansible.builtin.fail:
+    msg: "Deployment failed due to duplication of table names in multiple configurations"
+  when: duplicationFlag is search("True")
+
+- name: Notify deployment started
+  debug:
+    msg: "Deployment started"
+  when: duplicationFlag is not search("True")
